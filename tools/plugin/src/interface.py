@@ -74,3 +74,4 @@ class DropletInfoPanel( bpy.types.Panel ):
 			row = layout.row()
 			row.operator( 'droplet.set_min_current' )
 			row.operator( 'droplet.set_max_current' )
+			layout.prop( object, 'droplet_parent' )

@@ -61,18 +61,18 @@ def compile_component( component: bpy.types.Object ):
 	dest_min	= None
 	dest_max	= None
 	
-	if component.droplet_movetype == 'linear':
+	if dest_movetype == constants.LINEAR:
 		dest_min, dest_max = list(component.droplet_linear_min), list(component.droplet_linear_max)
-	elif component.droplet_movetype == 'radial':
+	elif dest_movetype == constants.RADIAL:
 		dest_min, dest_max = component.droplet_radial_min, component.droplet_radial_max
 
-	# Undefine targets if limits are not set.
-	if dest_min == dest_max: dest_min, dest_max = None, None
+	# Get parent
+	dest_parent = component.droplet_parent.name if component.droplet_parent else None
 
 	# TODO:
 	# [X] Detect handle(s)
 	# [X] Get min/max, rotational type
-	# [ ] Handle parenting
+	# [X] Handle parenting
 	# [ ] springs and constraints
 
 	# Get handles
@@ -80,17 +80,24 @@ def compile_component( component: bpy.types.Object ):
 	for child in component.children:
 		if child.name.startswith('_HANDLE'):
 			dest_handles.append(compile_mesh(child.data))
-
-	return {
+	
+	# Put data into dict
+	componentinfo = {
 		'name':		component.name,
-		'parent':	None,
 		'position':	dest_pos,
 		'rotation':	dest_rot,
-
 		'movement':	dest_movetype,
-		'min':		dest_min,
-		'max':		dest_max,
-
-		'handles':	dest_handles,
 		'shape':	dest_polys,
 	}
+
+	if dest_movetype != constants.NONE:
+		componentinfo['handles']	= dest_handles
+
+		if dest_movetype != constants.DYNAMIC:
+			componentinfo['parent']	= dest_parent
+	
+			if dest_min != dest_max:
+				componentinfo['min']	= dest_min
+				componentinfo['max']	= dest_max
+
+	return componentinfo

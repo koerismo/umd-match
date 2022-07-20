@@ -54,6 +54,8 @@ def register():
 
 		bpy.types.Object.droplet_radial_min = bpy.props.FloatProperty( name='Droplet Radial Min' )
 		bpy.types.Object.droplet_radial_max = bpy.props.FloatProperty( name='Droplet Radial Max' )
+		
+		bpy.types.Object.droplet_parent		= bpy.props.PointerProperty( type=bpy.types.Object, name='Parent' )
 
 	except Exception as e:
 		print('--- AN ERROR OCCURRED ---', e)
