@@ -9,7 +9,7 @@
 export const NONE    = 0,
              LINEAR  = 1,
              RADIAL  = 2,
-			 DYNAMIC = 3;
+             DYNAMIC = 3;
 
 export const Levels = [
 	// Example world marker

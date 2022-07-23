@@ -39,17 +39,19 @@ def compile_level( container: bpy.types.Object ):
 
 
 def compile_mesh( mesh: bpy.types.Mesh ):
-	polygon = mesh.polygons[0]
-	vertices	= [ mesh.vertices[i] for i in polygon.vertices ]
-	compiled	= [ vert.co[:2] for vert in vertices ]
-	return compiled
+	out = []
+	for polygon in mesh.polygons:
+		vertices	= [ mesh.vertices[i] for i in polygon.vertices ]
+		compiled	= [ vert.co[:2] for vert in vertices ]
+		out.append(compiled)
+	return out
 
 def compile_component( component: bpy.types.Object ):
 	mesh: bpy.types.Mesh = component.data
 
 	# Get shape
 	if mesh is None: raise ValueError( f'Component {component.name} has no mesh!' )
-	if len(mesh.polygons) != 1: raise ValueError( f'Component {component.name} must have one polygon!' )
+	if len(mesh.polygons) < 1: raise ValueError( f'Component {component.name} must have at least one polygon!' )
 	dest_polys	= compile_mesh( mesh )
 
 	# Get position
@@ -76,10 +78,10 @@ def compile_component( component: bpy.types.Object ):
 	# [ ] springs and constraints
 
 	# Get handles
-	dest_handles	= []
+	dest_handle = []
 	for child in component.children:
 		if child.name.startswith('_HANDLE'):
-			dest_handles.append(compile_mesh(child.data))
+			dest_handle.extend(compile_mesh(child.data))
 	
 	# Put data into dict
 	componentinfo = {
@@ -91,13 +93,13 @@ def compile_component( component: bpy.types.Object ):
 	}
 
 	if dest_movetype != constants.NONE:
-		componentinfo['handles']	= dest_handles
+		componentinfo['handle'] = dest_handle
 
 		if dest_movetype != constants.DYNAMIC:
-			componentinfo['parent']	= dest_parent
+			componentinfo['parent'] = dest_parent
 	
 			if dest_min != dest_max:
-				componentinfo['min']	= dest_min
-				componentinfo['max']	= dest_max
+				componentinfo['min'] = dest_min
+				componentinfo['max'] = dest_max
 
 	return componentinfo
