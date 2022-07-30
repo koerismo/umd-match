@@ -1,16 +1,14 @@
 {
-	"name": "droplet-game",
+	"name": "game",
 	"version": "1.0.0",
 	"main": "src/index.js",
 	"scripts": {
-		"build": "npx webpack build --config ./webpack.config.js"
+		"build": "npx tsc"
 	},
 	"author": "Jadon L",
 	"license": "MIT",
 	"dependencies": {
-		"jquery": "^3.6.0",
-		"matter-attractors": "^0.1.6",
-		"matter-js": "^0.18.0"
+		"jquery": "^3.6.0"
 	},
 	"devDependencies": {
 		"webpack-cli": "^4.10.0"
