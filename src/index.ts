@@ -9,7 +9,7 @@ canvas.height = canvas.clientHeight;
 const game = globalThis.game = new GameWrapper(canvas);
 (async ()=> {
 	await load_sheet( '/assets/game/sprites.png' );
-	game.generate_random( 20, 0, 0 );
+	game.generate_random( 0, 2, 0 );
 	game.render();
 })();
 

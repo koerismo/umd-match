@@ -90,26 +90,28 @@ export class GameWrapper {
 
 			// Create a new bunch of stars. For every flag, determine if the flag is all different or all the same.
 			// Pick a random starting point for every flag, then increment the different ones for every star.
-			const pair_size			= randint( 2, 3 );
+			const pair_size			= 3 // randint( 2, 3 );
 			const pair				= new Array(pair_size);
 
 			const flags_unique		= randint( 0b000, 0b111 );
 			let pair_flag_inds		= bitwise_random( FLAGS_MAX );
+			console.log('Creating pair with start point ', pair_flag_inds.toString(16) )
 
 			// This is some of the worst code i have written in a while.
 			// Apologies to anyone that has to maintain this later down the line!
 			function increment_flag_at_pos( pos: number ) {
-				const f_orig_value	= pair_flag_inds >> (pos*4) & 0xf;
-				const f_max_value	= FLAGS_MAX >> (pos*4) & 0xf;
+				const f_orig_value	= (pair_flag_inds >> (pos*4)) & 0xf;
+				const f_max_value	= (FLAGS_MAX >> (pos*4)) & 0xf;
 				const f_new_value	= (f_orig_value+1) % f_max_value;
-				pair_flag_inds += f_new_value<<(pos*4) - f_orig_value<<(pos*4);
+				pair_flag_inds += (f_new_value<<(pos*4)) - (f_orig_value<<(pos*4));
 			}
 			
 			for ( let star=0; star<pair_size; star++ ) {
+				console.log('Created star with flags ', pair_flag_inds.toString(16) )
+				pair[star] = randpos({ x:0, y:0, flags:pair_flag_inds, vx:0, vy:0, });
 				for ( let flag=0; flag<3; flag++ )
 					if ( flags_unique>>flag & 0b1 )
 						increment_flag_at_pos( flag );
-				pair[star] = randpos({ x:0, y:0, flags:pair_flag_inds, vx: 0, vy: 0, });
 			}
 
 			paired.push( pair );
