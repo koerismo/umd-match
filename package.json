@@ -5,9 +5,9 @@
 	"scripts": {
 		"build": "npx tsc"
 	},
-	"author": "Jadon L",
 	"license": "MIT",
 	"dependencies": {
+		"howler": "^2.2.3",
 		"jquery": "^3.6.0"
 	},
 	"devDependencies": {
