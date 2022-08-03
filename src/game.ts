@@ -124,7 +124,6 @@ export class GameWrapper {
 		// 1 = limited:	Main movement is disabled, but collection/completion movement is retained
 		// 2 = minimal:	All movement is disabled and replaced with fades
 		GameWrapper.motion = mode;
-		console.warn('SetMotionMode is non-functional!');
 	}
 
 	constructor( element: HTMLCanvasElement ) {
@@ -132,7 +131,7 @@ export class GameWrapper {
 		this.canvas	= element;
 
 		//@ts-ignore possibly null
-		this.ctx = this.canvas.getContext('2d', { alpha: false });
+		this.ctx = this.canvas.getContext( '2d' );
 		if (this.ctx === null) throw('Context is null! This should never happen.');
 
 		this.canvas.addEventListener( 'mousemove', e=>{ this.onmousemove(e) });
@@ -221,19 +220,23 @@ export class GameWrapper {
 		}
 	}
 
-	nearest_star( vec: i_Vec2, exclude: number=-1 ) {
+	nearest_star( vec: i_Vec2, exclude: number=-1 ): number|null {
 		if ( this.stars.length == 0 ) return null;
-		const indices	= Array.from(Array(this.stars.length),(_,i)=>i);
-		const dists		= indices.map( i => Vec2.mag({ x: vec.x-this.stars[i].x, y: vec.y-this.stars[i].y }) );
-		indices.sort( (a,b) => +(dists[b] < dists[a]) );
-		const filtered = indices.filter( x => !this.stars[x].collected && x != exclude );
-		if ( filtered.length == 0 ) return null;
-		return filtered[0];
+
+		const dists	= new Array(this.stars.length);
+		let min_dist = null;
+		for ( let i=0; i<this.stars.length; i++ ) {
+			dists[i] = Vec2.mag({ x: vec.x-this.stars[i].x, y: vec.y-this.stars[i].y });
+			if ( exclude != i && (dists[i] < min_dist || min_dist === null) ) { min_dist = dists[i] };
+		}
+
+		if ( min_dist === null ) { return null }
+		return dists.indexOf( min_dist );
 	}
 
-	nearest_colliding_star( vec: i_Vec2, exclude: number=-1, radius: number=24 ) {
+	nearest_colliding_star( vec: i_Vec2, exclude: number=-1, radius: number=24 ): number|null {
 		const nearest = this.nearest_star( vec, exclude );
-		if ( nearest === null ) { return nearest }
+		if ( nearest === null ) { return null }
 		if ( Vec2.mag({ x: vec.x-this.stars[nearest].x, y: vec.y-this.stars[nearest].y }) > radius ) { return null }
 		return nearest;
 	}
@@ -415,7 +418,7 @@ export class GameWrapper {
 
 		if ( this.selection.length ) {
 			ctx.strokeStyle = '#888';
-			//ctx.lineWidth = this.dpi;
+			ctx.lineWidth = this.dpi;
 			
 			ctx.beginPath();
 			const first = this.selection[0];
