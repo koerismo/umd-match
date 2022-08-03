@@ -10,6 +10,8 @@ const el_settings_motion: HTMLElement		= document.querySelector('#settings-motio
 const el_volume_music: HTMLInputElement		= document.querySelector('#settings-volume-music');
 const el_volume_sfx: HTMLInputElement		= document.querySelector('#settings-volume-sfx');
 
+export let is_open = false;
+
 const settings = {
 	color_mode:		0,
 	volume_music:	1,
@@ -49,14 +51,25 @@ const motion_modes = [
 const actions = {
 	'enter-menu':		()=>{
 		el_container.classList.add( 'main', 'active' );
+		is_open = true;
+
+		// Lower resolution to speed up rendering
+		GameInstance.dpi = 0.5;
+		GameInstance.resize();
 	},
 	'main-resume':		()=>{
 		el_container.classList.remove( 'main', 'active' );
+		is_open = false;
+
+		// Return resolution to normal
+		GameInstance.dpi = devicePixelRatio;
+		GameInstance.resize();
 	},
 	'main-settings':	()=>{
 		el_container.classList.remove( 'main' );
 		el_container.classList.add( 'settings' );
 
+		el_settings_motion.innerText = motion_modes[settings.motion];
 		el_settings_colormode.innerText = color_modes[settings.color_mode].name;
 		el_volume_music.value = settings.volume_music.toString();
 		el_volume_sfx.value = settings.volume_sfx.toString();

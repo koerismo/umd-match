@@ -223,11 +223,12 @@ export class GameWrapper {
 	nearest_star( vec: i_Vec2, exclude: number=-1 ): number|null {
 		if ( this.stars.length == 0 ) return null;
 
-		const dists	= new Array(this.stars.length);
+		const dists	= new Uint8ClampedArray(this.stars.length);
 		let min_dist = null;
 		for ( let i=0; i<this.stars.length; i++ ) {
-			dists[i] = Vec2.mag({ x: vec.x-this.stars[i].x, y: vec.y-this.stars[i].y });
-			if ( exclude != i && (dists[i] < min_dist || min_dist === null) ) { min_dist = dists[i] };
+			dists[i] = Math.sqrt( (vec.x-this.stars[i].x)**2 + (vec.y-this.stars[i].y)**2 );
+			// Is not excluded,  is minimum OR the first item,                 is not collected
+			if ( exclude != i && (dists[i] < min_dist || min_dist === null) && !this.stars[i].collected ) { min_dist = dists[i] };
 		}
 
 		if ( min_dist === null ) { return null }
@@ -272,8 +273,6 @@ export class GameWrapper {
 		function randpos( star: iStar ) {
 			star.x = randfloat(0.1,0.9)*csize.width;
 			star.y = randfloat(0.1,0.9)*csize.height;
-			star.visx = (star.x - csize.width/2)*1.4 + csize.width/2;
-			star.visy = (star.y - csize.height/2)*1.4 + csize.height/2;
 			return star;
 		}
 
@@ -350,9 +349,8 @@ export class GameWrapper {
 		
 	}
 
-	physics( time_raw: number, force_motion=false ) {
+	physics( deltatime: number, force_motion=false ) {
 
-		const time = time_raw|0;
 		const is_full_motion = GameWrapper.motion == MOTION_FULL || force_motion;
 		const center = Vec2.new( this.space.width/2, this.space.height/2 );
 
@@ -394,8 +392,8 @@ export class GameWrapper {
 	
 				star.velx *= 0.9;
 				star.vely *= 0.9;
-				star.x += star.velx * time,
-				star.y += star.vely * time;
+				star.x += star.velx * deltatime,
+				star.y += star.vely * deltatime;
 				continue;
 			}
 

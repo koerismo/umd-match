@@ -55,6 +55,8 @@ export function set_sound_volume( name: string, volume: number ) {
 /** Set channel volume, and update all currently playing sounds. Warning: This is expensive! */
 export function set_channel_volume( name: string, volume: number ) {
 	if (!( name in CHANNELS )) throw( `ValueError: Attempted to access non-existent channel ${name}` );
+	CHANNELS[name] = volume;
+	
 	for ( let s in SOUNDS ) {
 		if ( SOUNDS[s].channel !== name ) { continue }
 		for ( let howl of SOUNDS[s].howls ) {
