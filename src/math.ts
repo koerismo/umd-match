@@ -105,6 +105,22 @@ export class Vec2 {
 		vec.y *= y;
 	}
 
+	static div( vec: i_Vec2, x: number|i_Vec2, y: number|undefined=undefined ): void {
+		if ( y === undefined ) {
+			if ( typeof x == 'number' ) {
+				vec.x /= x;
+				vec.y /= x;
+				return;
+			}
+			vec.x /= x.x;
+			vec.y /= x.y;
+			return;
+		}
+
+		vec.x /= x;
+		vec.y /= y;
+	}
+
 	static copy( vec: i_Vec2 ): i_Vec2 {
 		return { x: vec.x, y: vec.y }
 	}
