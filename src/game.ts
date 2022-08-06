@@ -48,8 +48,8 @@ sound.register_channels([
 	{ name: 'music', volume: 1 },
 ]);
 
-const FLAGS_RANGE = 0x332;
-const FLAGS_MAX = 0x221;
+const FLAGS_RANGE = 0x333;
+const FLAGS_MAX = 0x222;
 
 const ACT_IDLE = 0,
       ACT_GRAB = 1,
@@ -302,7 +302,7 @@ export class GameWrapper {
 			const pair_size			= 3 // randint( 2, 3 );
 			const pair				= new Array(pair_size);
 
-			const flags_unique		= randint( 0b000, 0b111 ) & 0b110;
+			const flags_unique		= randint( 0b000, 0b111 );
 			let pair_flag_inds		= Bytewise.random( FLAGS_MAX );
 			
 			for ( let star=0; star<pair_size; star++ ) {
@@ -451,6 +451,7 @@ export class GameWrapper {
 			switch(star.flags & 0xf) {
 				case 0: shape = 'crc'; break;
 				case 1: shape = 'sqr'; break;
+				case 2: shape = 'tri': break;
 			}
 
 			let mdir = Vec2.new( star.x-this.mouse.x, star.y-this.mouse.y );
