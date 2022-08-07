@@ -127,6 +127,7 @@ export class Vec2 {
 }
 
 export class Bytewise {
+	/** Sets a value at the specified index. */
 	static set( flags: number, index: number, value: number ) {
 		if ( value < 0 || value > 15 || value%1 != 0 ) throw( `Expected int within range 0-15 for Bytewise.set(), received ${value} instead` );
 		const bit_index = index*4;
@@ -136,6 +137,7 @@ export class Bytewise {
 		return out;
 	}
 
+	/** Generates a per-byte-random number that always falls within the provided max. */
 	static random( max: number ) {
 		let out = 0;
 		for ( let i=0; max>>i > 0; i+=4 ) {
@@ -145,30 +147,80 @@ export class Bytewise {
 		return out;
 	}
 
+	/** Gets a value at the specified index. */
 	static get( flags: number, index: number ) {
 		return (flags>>(index*4)) & 0xf;
  	}
 
+	/** Increments the value at the specified index. */
 	static inc( flags: number, index: number, max: number=0xf ) {
 		// Currently, this function is just shorthand for get/set. Could be improved for speed later on.
 		return Bytewise.set( flags, index, (Bytewise.get( flags, index )+1) % max );
 	}
 	
+	/** Decrements the value at the specified index. */
 	static dec( flags: number, index: number, max: number=0xf ) {
 		// Currently, this function is just shorthand for get/set. Could be improved for speed later on.
 		return Bytewise.set( flags, index, (Bytewise.get( flags, index )-1) % max );
+	}
+
+	/** Takes two sets of flags, and returns a bitwise comparison result. ex: (0xff0, 0x0f0) --> 0b010 */
+	static eq( a: number, b: number ) {
+		let out = 0;
+		for ( let i=0; a>>i > 0; i+=4 ) {
+			const digita = (a>>i) & 0xf;
+			const digitb = (b>>i) & 0xf;
+			out += +(digita===digitb) << (i/4);
+		}
+		return out;
+	}
+
+	/** THIS IS A SPECIALIZED FUNCTION! It does the following for each flag:
+	 ** If A == B, OUT = A
+	 ** If A != B, OUT != A != B
+	 ** FLAGS_MAX is unused, as this function uses dirty hacks to make it work.
+	*/
+	static star_compare( a: number, b: number ) {
+		let out = 0;
+		const max = a|b;
+		for ( let i=0; max>>i > 0; i+=4 ) {
+			const digita = (a>>i) & 0xf;
+			const digitb = (b>>i) & 0xf;
+			let digitc: number = null;
+
+			// this logic is REALLY bad, since it assumes that each flag only has 3 possible states.
+			// DO NOT USE ANYWHERE OTHER THAN STAR COMPARISON!
+			if (digita == digitb) { digitc = digita; }
+			else {
+				if ((digita == 0 && digitb == 1) || (digitb == 0 && digita == 1)) digitc = 2;
+				if ((digita == 0 && digitb == 2) || (digitb == 0 && digita == 2)) digitc = 1;
+				if ((digita == 1 && digitb == 2) || (digitb == 1 && digita == 2)) digitc = 0;
+			}
+
+			if (digitc === null) throw( `Star comparison critical error! DIGITA=${digita}, DIGITB=${digitb}` );
+			out += digitc<<i;
+		}
+		return out;
 	}
 }
 
 export class Bitwise {
 
+	/** Generates a per-bit random number that always falls within the provided max. */
 	static random( max: number ) {
 		let out = 0;
 		for ( let i=0; max>>i > 0; i++ ) {
-			const digit = (max>>i) & 0b1;
+			if (((max>>i) & 0b1) === 0) continue;
 			out += Math.round(Math.random()) << i;
 		}
 		return out;
+	}
+
+	/** Inverts the number per-bit. ex: 0b1010 --> 0b0101 */
+	static invert( value: number ) {
+		let max = 0;
+		for ( let i=0; value>>i > 0; i++ ) max += 1<<i;
+		return value ^ max;
 	}
 
 }

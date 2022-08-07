@@ -88,6 +88,7 @@ export class GameWrapper {
 	selection: Array<number> = [];
 	action = ACT_IDLE;
 	collected = 0;
+	__pairstate: [Array<Uint8Array>,Uint8Array] = [[],new Uint8Array()];
 
 	level_size: [number, number, number] = [ 0, 5, 0 ];
 	
@@ -155,6 +156,72 @@ export class GameWrapper {
 		this.mouse.star_id = this.nearest_colliding_star( this.mouse );
 	}
 
+	find_all_pairs() {
+		const pairs = [];
+		for ( let a_id=0; a_id<this.stars.length; a_id++ ) {
+			let star_a = this.stars[a_id];
+			if (star_a.collected) continue;
+
+			for ( let b_id=a_id+1; b_id<this.stars.length; b_id++ ) {
+				let star_b = this.stars[b_id];
+				if (star_b.collected) continue;
+
+				// For efficiency, we determine the type of match from the first two stars.
+				// After that, we only have to check once to make sure that it fits.
+				let target_flags = Bytewise.star_compare(star_a.flags, star_b.flags)
+
+				for ( let c_id=b_id+1; c_id<this.stars.length; c_id++ ) {
+					let star_c = this.stars[c_id];
+					if (star_c.collected) continue;
+
+					if ( star_c.flags !== target_flags ) continue;
+					pairs.push(Uint8Array.of(a_id, b_id, c_id));
+				}
+			}
+		}
+		return pairs;
+	}
+
+	__find_incomplete_pairs(): [Uint8Array[],Uint8Array] {
+		const pairs_complete: Array<Uint8Array> = [];
+		const stars_used = new Set();
+
+		for ( let a_id=0; a_id<this.stars.length; a_id++ ) {
+			let star_a = this.stars[a_id];
+			if (star_a.collected) continue;
+
+			for ( let b_id=a_id+1; b_id<this.stars.length; b_id++ ) {
+				let star_b = this.stars[b_id];
+				if (star_b.collected) continue;
+
+				// For efficiency, we determine the type of match from the first two stars.
+				// After that, we only have to check once to make sure that it fits.
+				let target_flags = Bytewise.star_compare(star_a.flags, star_b.flags)
+
+				for ( let c_id=b_id+1; c_id<this.stars.length; c_id++ ) {
+					let star_c = this.stars[c_id];
+					if (star_c.collected) continue;
+
+					if ( star_c.flags !== target_flags ) continue;
+					stars_used.add( a_id );
+					stars_used.add( b_id );
+					stars_used.add( c_id );
+					pairs_complete.push(Uint8Array.of(a_id, b_id, c_id));
+				}
+			}
+		}
+
+		const pairs_single = new Uint8Array( this.stars.length-stars_used.size-this.collected );
+		let unpairable_id = 0;
+		for ( let id=0; id<this.stars.length; id++ ) {
+			if (stars_used.has(id) || this.stars[id].collected) continue;
+			pairs_single[unpairable_id] = id;
+			unpairable_id ++;
+		}
+
+		return [pairs_complete, pairs_single];
+	}
+
 	check_pair( pair: Array<number> ) {
 		const flags = new Array(3);
 		for ( let flag_ind=0; flag_ind<3; flag_ind++ ) {
@@ -205,9 +272,8 @@ export class GameWrapper {
 					sound.play_sound( 'complete' );
 					this.next_stage();
 				}
-				else {
-				}
 				sound.play_sound( 'connect_succeed' );
+				this.__pairstate = this.__find_incomplete_pairs();
 				this.selection = [];
 				this.action = ACT_IDLE;
 			}
@@ -248,6 +314,7 @@ export class GameWrapper {
 		this.selection = [];
 		this.collected = 0;
 		this.generate_random( ...this.level_size );
+		this.__pairstate = this.__find_incomplete_pairs();
 
 		if ( GameWrapper.motion > MOTION_FULL ) {
 			for ( let x=0; x<50; x++ ) {
@@ -409,6 +476,7 @@ export class GameWrapper {
 
 		const ctx = this.ctx;
 		ctx.clearRect( 0, 0, this.canvas.width, this.canvas.height );
+		ctx.filter = 'none';
 
 		// TODO: WHAT THE FUCK???
 		// ctx.fillStyle = '#111';
@@ -431,6 +499,42 @@ export class GameWrapper {
 			}
 
 			ctx.stroke();
+		}
+
+		if ( this.__pairstate ) {
+			const pairable = this.__pairstate[0];
+			const single = this.__pairstate[1];
+
+			if ( pairable.length ) {
+				ctx.strokeStyle = 'rgb(0,255,0)';
+				ctx.beginPath();
+				//ctx.moveTo( this.stars[pairable[0][0]].visx*this.dpi, this.stars[pairable[0][1]].visy*this.dpi );
+				for ( let pair of pairable ) {
+					//ctx.beginPath();
+					ctx.moveTo( this.stars[pair[0]].visx*this.dpi, this.stars[pair[0]].visy*this.dpi );
+					ctx.lineTo( this.stars[pair[1]].visx*this.dpi, this.stars[pair[1]].visy*this.dpi );
+					ctx.lineTo( this.stars[pair[2]].visx*this.dpi, this.stars[pair[2]].visy*this.dpi );
+					ctx.lineTo( this.stars[pair[0]].visx*this.dpi, this.stars[pair[0]].visy*this.dpi );
+					//ctx.closePath();
+				}
+				ctx.stroke();
+			}
+			
+			if ( single.length ) {
+				ctx.strokeStyle = '#f00';
+				ctx.beginPath();
+				//ctx.moveTo( this.stars[pairable[0][0]].visx*this.dpi, this.stars[pairable[0][1]].visy*this.dpi );
+				for ( let pair of single ) {
+					if ( this.stars[pair].collected ) continue;
+					//ctx.beginPath();
+					const x = this.stars[pair].visx*this.dpi;
+					const y = this.stars[pair].visy*this.dpi;
+					ctx.moveTo( x, y )
+					ctx.ellipse( x, y, 30, 30, 0, 0, 360 );
+					//ctx.closePath();
+				}
+				ctx.stroke();
+			}
 		}
 
 		for ( let star_ind=0; star_ind<this.stars.length; star_ind++ ) {
