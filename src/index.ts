@@ -1,16 +1,18 @@
 'use strict';
 
-import { GameWrapper } from './game.js';
-import { load_sheet } from './sheet.js';
+import { GameWrapper, preload } from './game.js';
 import { Bytewise, Vec2 } from './math.js';
+import { begin_tutorial } from './tutorial.js';
 import './menu.js';
 
+// remove this later, debug!!!
 globalThis.GameWrapper = GameWrapper;
 globalThis.Bytewise = Bytewise;
 globalThis.Vec2 = Vec2;
+globalThis.begin_tutorial = begin_tutorial;
 
 const canvas = document.querySelector('canvas');
-const el_fps = document.querySelector('span#fps');
+// const el_fps = document.querySelector('span#fps');
 window.addEventListener( 'resize', ()=>{
 	instance.resize();
 })
@@ -18,8 +20,8 @@ window.addEventListener( 'resize', ()=>{
 export const instance = globalThis.game = new GameWrapper(canvas);
 instance.resize();
 (async ()=> {
-	await load_sheet( '/assets/game/sprites.png' );
-	instance.next_stage();
+	await preload();
+	begin_tutorial();
 	renderloop( 0 );
 })();
 
@@ -34,7 +36,7 @@ function renderloop(time_raw: number) {
 	lasttime = time;
 	
 	avg_delta += (delta - avg_delta)/40;
-	el_fps.innerText = (Math.round(1000/avg_delta*10)/10).toFixed(1);
+	// el_fps.innerText = (Math.round(1000/avg_delta*10)/10).toFixed(1);
 
 	// If the tab is not focused, pause the game.
 	if ( delta < 800 ) {

@@ -1,9 +1,27 @@
-import { Vec2, i_Vec2, randint, Bitwise, Bytewise, randfloat } from './math.js';
-import { Sheet, draw_sprite } from './sheet.js';
+import { Vec2, i_Vec2, randint, Bitwise, Bytewise, randfloat, remap, constrain } from './math.js';
+import { draw_sprite, load_image, load_sheet } from './image.js';
 import * as sound from './sound.js';
 import './howler.js';
 
-function sleep( millis: number ){return new Promise(r=>{setTimeout(r,millis)})};
+//const assets = {};
+export async function preload() {
+	// const asset_sources = {
+	// 	'bg_layer_00': '/assets/game/bg_layer_00.png',
+	// 	'bg_layer_01': '/assets/game/bg_layer_01.png',
+	// };
+
+	// TODO: this has absolutely no error handling
+	// for ( let source in asset_sources ) {
+	// 	assets[source] = await load_image(asset_sources[source]);
+	// }
+
+	await load_sheet( '/assets/game/sprites_legacy.png' );
+}
+
+
+
+
+export function sleep( millis: number ){return new Promise(r=>{setTimeout(r,millis)})};
 
 /*
 	struct flags {
@@ -48,6 +66,8 @@ sound.register_channels([
 	{ name: 'music', volume: 1 },
 ]);
 
+const el_background = document.querySelector('#background');
+
 const FLAGS_RANGE = 0x333;
 const FLAGS_MAX = 0x222;
 
@@ -88,7 +108,14 @@ export class GameWrapper {
 	selection: Array<number> = [];
 	action = ACT_IDLE;
 	collected = 0;
-	__pairstate: [Array<Uint8Array>,Uint8Array] = [[],new Uint8Array()];
+	difficulty = 0;
+
+	__enable_score = true;
+	score = 0;
+	vscore = 0;
+
+	__events = {};
+	__pairstate: [Array<Uint8Array>,Uint8Array] = [[],new Uint8Array()]; // DEBUG
 
 	level_size: [number, number, number] = [ 0, 5, 0 ];
 	
@@ -96,6 +123,7 @@ export class GameWrapper {
 	static gamescale = 1;
 	static motion = MOTION_FULL;
 
+	// this is obsolete now
 	static colortable: Array<[number, number, number]> = [
 		// H    S    L
 		[168, 100,  77],	// Cyan
@@ -104,6 +132,7 @@ export class GameWrapper {
 	];
 
 	static SetColorMode( mode: Array<[number, number, number]> ) {
+		console.warn('SetColorMode is obsolete!');
 		GameWrapper.colortable = mode;
 	}
 
@@ -124,6 +153,8 @@ export class GameWrapper {
 		// 0 = full:	Everything is enabled
 		// 1 = limited:	Main movement is disabled, but collection/completion movement is retained
 		// 2 = minimal:	All movement is disabled and replaced with fades
+
+		el_background.classList.toggle( 'no-motion', mode > MOTION_FULL );
 		GameWrapper.motion = mode;
 	}
 
@@ -153,36 +184,15 @@ export class GameWrapper {
 	onmousemove( e: MouseEvent ) {
 		this.mouse.x = e.x,
 		this.mouse.y = e.y;
-		this.mouse.star_id = this.nearest_colliding_star( this.mouse );
+		this.mouse.star_id = this.nearest_star( this.mouse, -1, 24*GameWrapper.gamescale );
 	}
 
-	find_all_pairs() {
-		const pairs = [];
-		for ( let a_id=0; a_id<this.stars.length; a_id++ ) {
-			let star_a = this.stars[a_id];
-			if (star_a.collected) continue;
-
-			for ( let b_id=a_id+1; b_id<this.stars.length; b_id++ ) {
-				let star_b = this.stars[b_id];
-				if (star_b.collected) continue;
-
-				// For efficiency, we determine the type of match from the first two stars.
-				// After that, we only have to check once to make sure that it fits.
-				let target_flags = Bytewise.star_compare(star_a.flags, star_b.flags)
-
-				for ( let c_id=b_id+1; c_id<this.stars.length; c_id++ ) {
-					let star_c = this.stars[c_id];
-					if (star_c.collected) continue;
-
-					if ( star_c.flags !== target_flags ) continue;
-					pairs.push(Uint8Array.of(a_id, b_id, c_id));
-				}
-			}
-		}
-		return pairs;
-	}
-
-	__find_incomplete_pairs(): [Uint8Array[],Uint8Array] {
+	/**
+	 * DEBUG FUNCTION
+	 * @private
+	 * @returns [List of Uint8Array star index pairs, Uint8Array of unpaired star indices]
+	 */
+	__analyze_pairs(): [Uint8Array[],Uint8Array] {
 		const pairs_complete: Array<Uint8Array> = [];
 		const stars_used = new Set();
 
@@ -222,6 +232,69 @@ export class GameWrapper {
 		return [pairs_complete, pairs_single];
 	}
 
+	/**
+	 * @param {number} difficulty A 0-1 float of the difficulty level.
+	 * TODO: Rewrite this to be more efficient!!
+	 * 
+	 * This function does several things:
+	 ** Evaluates every star, and looks for pairs that are currently impossible.
+	 ** Ranks the 'requested' stars in order of most requests
+	 ** Picks three stars from the list of requested stars (which ones it picks are determined by difficulty)
+	 ** Adds new stars created with the picked properties to the board
+	 */
+	replenish_pairs( difficulty: number ) {
+		const req_stars_set: Set<number> = new Set();
+		const req_stars_dic = {};
+
+		// Step 1: Evaluate incomplete pairs and rank requested stars.
+		for ( let a_id=0; a_id<this.stars.length; a_id++ ) {
+			let star_a = this.stars[a_id];
+			if (star_a.collected) continue;
+
+			for ( let b_id=a_id+1; b_id<this.stars.length; b_id++ ) {
+				let star_b = this.stars[b_id];
+				if (star_b.collected) continue;
+				let target_flags = Bytewise.star_compare(star_a.flags, star_b.flags)
+
+				let found = false;
+				for ( let c_id=b_id+1; c_id<this.stars.length; c_id++ ) {
+					let star_c = this.stars[c_id];
+					if (!star_c.collected && star_c.flags == target_flags ) { found = true; break }
+				}
+
+				if ( found ) { continue }
+				req_stars_set.add(target_flags);
+				req_stars_dic[target_flags] = (req_stars_dic[target_flags]||0) + 1;
+			}
+		}
+
+		// Step 2: Pick most requested stars.
+		const base_index = Math.round(remap( difficulty, 0, 1, 1, req_stars_set.size ));
+		//@ts-ignore typescript badness
+		const req_stars = Array.from(req_stars_set).sort((a,b)=>{
+			return req_stars_dic[b] > req_stars_dic[a];
+		});
+
+		// Visualization of difficulty float --> star choice
+		// ———————————————————————————————————————————————————————————
+		//           0            0.5                1
+		//           |-|-|       |-|-|             |-|-|
+		// usable: [ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 ]
+		// unusable:                               [ 0 1 2 3 4 5 6 7 ]
+		// ———————————————————————————————————————————————————————————
+
+		const new_stars = new Array(3);
+		for ( let i=0; i<3; i++ ) {
+			if ( i+base_index-1 < req_stars_set.size )
+				new_stars[i] = this.__createStar( req_stars[i+base_index-1] );
+			else
+				new_stars[i] = this.__createStar( Bytewise.random(FLAGS_MAX) );
+		}
+
+		Array.prototype.push.apply( this.stars, new_stars );
+		return new_stars;
+	}
+
 	check_pair( pair: Array<number> ) {
 		const flags = new Array(3);
 		for ( let flag_ind=0; flag_ind<3; flag_ind++ ) {
@@ -239,7 +312,7 @@ export class GameWrapper {
 		this.mouse.x = e.x,
 		this.mouse.y = e.y;
 
-		let star_ind: number|null = this.nearest_colliding_star( this.mouse, -1, 24 );
+		let star_ind: number|null = this.nearest_star( this.mouse, -1, 24*GameWrapper.gamescale );
 		if ( star_ind === null ) {
 			this.selection = [];
 			this.action = ACT_IDLE;
@@ -270,10 +343,13 @@ export class GameWrapper {
 				}
 				if ( this.collected == this.stars.length ) {
 					sound.play_sound( 'complete' );
-					this.next_stage();
+					if (this.__fire_event( 'complete' )) this.next_stage();
+					// TODO: Make something happen with the points here?
 				}
+
 				sound.play_sound( 'connect_succeed' );
-				this.__pairstate = this.__find_incomplete_pairs();
+				if (this.__enable_score) this.score += this.determine_score( this.selection );
+				this.__pairstate = this.__analyze_pairs();
 				this.selection = [];
 				this.action = ACT_IDLE;
 			}
@@ -286,7 +362,7 @@ export class GameWrapper {
 		}
 	}
 
-	nearest_star( vec: i_Vec2, exclude: number=-1 ): number|null {
+	nearest_star( vec: i_Vec2, exclude: number=-1, max_radius: number=0 ): number|null {
 		if ( this.stars.length == 0 ) return null;
 
 		const dists	= new Uint8ClampedArray(this.stars.length);
@@ -297,24 +373,55 @@ export class GameWrapper {
 			if ( exclude != i && (dists[i] < min_dist || min_dist === null) && !this.stars[i].collected ) { min_dist = dists[i] };
 		}
 
-		if ( min_dist === null ) { return null }
+		if ( min_dist === null || (max_radius && min_dist > max_radius) ) { return null }
 		return dists.indexOf( min_dist );
 	}
 
-	nearest_colliding_star( vec: i_Vec2, exclude: number=-1, radius: number=24 ): number|null {
-		const nearest = this.nearest_star( vec, exclude );
-		if ( nearest === null ) { return null }
-		if ( Vec2.mag({ x: vec.x-this.stars[nearest].x, y: vec.y-this.stars[nearest].y }) > radius ) { return null }
-		return nearest;
+	clear_stage() {
+		this.stars = [];
+		this.selection = [];
+		this.collected = 0;
+	}
+
+	hook( name: string, func: Function ) {
+		this.__events[name] = func;
+	}
+
+	unhook( name: string ) {
+		if (name in this.__events) delete this.__events[name];
+	}
+
+	__fire_event( name: string ) {
+		/* If this returns true, it means that it should continue with the normal next event. */
+		if ( name in this.__events ) return this.__events[name](this);
+		return true;
+	}
+
+	/**
+	 * Determines the score that a pair should earn. This is an arbitrary number that means nothing.
+	 * min=50, max=140
+	 */
+	determine_score( pair: Array<number> ) {
+
+		/*	struct flags {
+			char	color
+			char	fill
+			char	shape
+		} */
+
+		let score = 50;
+		const diff = Bytewise.eq(this.stars[pair[0]].flags, this.stars[pair[1]].flags);
+		if (!((diff>>2)&&1)) score += 20
+		if (!((diff>>1)&&1)) score += 30
+		if (!((diff>>0)&&1)) score += 40
+		return score;
 	}
 
 	async next_stage() {
 		await sleep(500);
-		this.stars = [];
-		this.selection = [];
-		this.collected = 0;
+		this.clear_stage();
 		this.generate_random( ...this.level_size );
-		this.__pairstate = this.__find_incomplete_pairs();
+		// this.__pairstate = this.__analyze_pairs();
 
 		if ( GameWrapper.motion > MOTION_FULL ) {
 			for ( let x=0; x<50; x++ ) {
@@ -322,6 +429,17 @@ export class GameWrapper {
 			}
 			this.settle_stars( GameWrapper.motion < MOTION_MINIMUM );
 		} else this.settle_stars( true );
+	}
+
+	__createStar( flags: number ) {
+		const csize = this.space;
+		function randpos( star: iStar ) {
+			star.x = randfloat(0.1,0.9)*csize.width;
+			star.y = randfloat(0.1,0.9)*csize.height;
+			return star;
+		}
+
+		return randpos({ x:0, y:0, flags:flags, velx:0, vely:0, collected:false, visx:0, visy:0, vscale:2, opacity:100 });
 	}
 
 	/**
@@ -343,23 +461,6 @@ export class GameWrapper {
 			return star;
 		}
 
-		// Will do later
-		/*function find_unpaired_stars() {
-			const unpaired = [];
-			for ( let star_a=0; star_a<this.stars.length; star_a++ ) {
-				for ( let star_b=0; star_b<this.stars.length; star_b++ ) {
-					
-				}
-			}
-		}
-
-		// Attempt to create pairs for existing stars.
-		// Repair. Re-pair. Ha-ha, get it?
-		const repaired: Array<Array<iStar>> = [];
-		for ( let i=0; i<num_repairs; i++ ) {
-			// Attempt to locate num_repairs number of unpaired stars, and create pairs for them.
-		}*/
-
 		// Create paired stars.
 		const paired: Array<Array<iStar>> = [];
 		for ( let i=0; i<num_paired; i++ ) {
@@ -373,7 +474,7 @@ export class GameWrapper {
 			let pair_flag_inds		= Bytewise.random( FLAGS_MAX );
 			
 			for ( let star=0; star<pair_size; star++ ) {
-				pair[star] = randpos({ x:0, y:0, flags:pair_flag_inds, velx:0, vely:0, collected:false, visx:0, visy:0, vscale:2, opacity:100 });
+				pair[star] = this.__createStar(pair_flag_inds);
 				for ( let flag=0; flag<3; flag++ )
 					if ( (flags_unique>>flag) & 0b1 )
 						pair_flag_inds = Bytewise.inc( pair_flag_inds, flag, Bytewise.get(FLAGS_RANGE, flag) );
@@ -386,7 +487,7 @@ export class GameWrapper {
 		// Create random stars.
 		const unpaired = new Array( num_unpaired );
 		for ( let i=0; i<num_unpaired; i++ ) {
-			unpaired[i] = randpos({ x:0, y:0, flags:Bytewise.random(FLAGS_MAX), velx:0, vely:0, collected:false, visx:0, visy:0, vscale:2, opacity:100 });
+			unpaired[i] = this.__createStar(Bytewise.random(FLAGS_MAX));
 		}
 
 		// Apply new
@@ -446,7 +547,7 @@ export class GameWrapper {
 				star.vely += grav_swirl.y;
 
 				// Star collision
-				const nstar = this.nearest_colliding_star( star, star_ind, 72 );
+				const nstar = this.nearest_star( star, star_ind, 72 );
 				if ( nstar !== null ) {
 					const inverse = Vec2.copy( star );
 					Vec2.sub( inverse, this.stars[nstar] );
@@ -476,11 +577,6 @@ export class GameWrapper {
 
 		const ctx = this.ctx;
 		ctx.clearRect( 0, 0, this.canvas.width, this.canvas.height );
-		ctx.filter = 'none';
-
-		// TODO: WHAT THE FUCK???
-		// ctx.fillStyle = '#111';
-		// ctx.fillRect( 0, 0, this.canvas.width, this.canvas.height );
 
 		if ( this.selection.length ) {
 			ctx.strokeStyle = '#888';
@@ -501,6 +597,7 @@ export class GameWrapper {
 			ctx.stroke();
 		}
 
+		/*
 		if ( this.__pairstate ) {
 			const pairable = this.__pairstate[0];
 			const single = this.__pairstate[1];
@@ -508,14 +605,11 @@ export class GameWrapper {
 			if ( pairable.length ) {
 				ctx.strokeStyle = 'rgb(0,255,0)';
 				ctx.beginPath();
-				//ctx.moveTo( this.stars[pairable[0][0]].visx*this.dpi, this.stars[pairable[0][1]].visy*this.dpi );
 				for ( let pair of pairable ) {
-					//ctx.beginPath();
 					ctx.moveTo( this.stars[pair[0]].visx*this.dpi, this.stars[pair[0]].visy*this.dpi );
 					ctx.lineTo( this.stars[pair[1]].visx*this.dpi, this.stars[pair[1]].visy*this.dpi );
 					ctx.lineTo( this.stars[pair[2]].visx*this.dpi, this.stars[pair[2]].visy*this.dpi );
 					ctx.lineTo( this.stars[pair[0]].visx*this.dpi, this.stars[pair[0]].visy*this.dpi );
-					//ctx.closePath();
 				}
 				ctx.stroke();
 			}
@@ -523,40 +617,43 @@ export class GameWrapper {
 			if ( single.length ) {
 				ctx.strokeStyle = '#f00';
 				ctx.beginPath();
-				//ctx.moveTo( this.stars[pairable[0][0]].visx*this.dpi, this.stars[pairable[0][1]].visy*this.dpi );
 				for ( let pair of single ) {
 					if ( this.stars[pair].collected ) continue;
-					//ctx.beginPath();
 					const x = this.stars[pair].visx*this.dpi;
 					const y = this.stars[pair].visy*this.dpi;
 					ctx.moveTo( x, y )
 					ctx.ellipse( x, y, 30, 30, 0, 0, 360 );
-					//ctx.closePath();
 				}
 				ctx.stroke();
 			}
 		}
+		*/
+
+		/*
+		// Connect nearby stars with subtle lines. Looks cool, but will probably misguide players.
+		ctx.lineWidth = this.dpi/2;
+		ctx.strokeStyle = '#fff3';
+		ctx.beginPath();
+		for ( let a_id=0; a_id<this.stars.length; a_id++ ) {
+			let star_a = this.stars[a_id];
+			if ( star_a.collected ) continue;
+
+			for ( let b_id=a_id+1; b_id<this.stars.length; b_id++ ) {
+				let star_b = this.stars[b_id];
+				if ( star_b.collected ) continue;
+
+				if ( ((star_a.x-star_b.x)**2 + (star_a.y-star_b.y)**2)**0.5 > 100 ) continue;
+				ctx.moveTo( star_a.visx*this.dpi, star_a.visy*this.dpi );
+				ctx.lineTo( star_b.visx*this.dpi, star_b.visy*this.dpi );
+			}
+		}
+		ctx.stroke();
+		*/
+		
 
 		for ( let star_ind=0; star_ind<this.stars.length; star_ind++ ) {
 			const star = this.stars[star_ind];
 			if ( star.opacity <= 0 ) { continue }
-
-			// This is the part where things get awful
-			let color = GameWrapper.colortable[ (star.flags>>8) & 0xf ];
-
-			let infill = '';
-			switch(star.flags & 0x0f0) {
-				case 0x000:	infill = '100'; break;
-				case 0x010:	infill = '50'; break;
-				case 0x020:	infill = '0'; break;
-			}
-
-			let shape = '';
-			switch(star.flags & 0xf) {
-				case 0: shape = 'crc'; break;
-				case 1: shape = 'sqr'; break;
-				case 2: shape = 'tri': break;
-			}
 
 			let mdir = Vec2.new( star.x-this.mouse.x, star.y-this.mouse.y );
 			Vec2.mult( mdir, -0.04 * (this.mouse.star_id!==null && this.mouse.star_id!==star_ind) );
@@ -571,14 +668,31 @@ export class GameWrapper {
 			star.visy = (star.visy*2 + pos.y) / 3;
 			star.vscale = (star.vscale*2 + scale) / 3;
 			const rscale = star.vscale * 32;
-
-			ctx.filter = `hue-rotate(${color[0]}deg) saturate(${color[1]-(Math.min(color[2],50)-50)}%) brightness(${color[2]+100}%) opacity(${star.opacity}%)`;
+			ctx.globalAlpha = star.opacity/100;
 
 			const canvas_pos = Vec2.new( star.visx, star.visy );
 			const canvas_scale = rscale * this.dpi * GameWrapper.gamescale;
 			Vec2.mult( canvas_pos, this.dpi );
 
-			draw_sprite( ctx, `${shape}-fill${infill}`, canvas_pos.x-canvas_scale/2, canvas_pos.y-canvas_scale/2, canvas_scale, canvas_scale );
+			draw_sprite( ctx, star.flags, canvas_pos.x-canvas_scale/2, canvas_pos.y-canvas_scale/2, canvas_scale, canvas_scale );
+		}
+
+		if ( this.__enable_score ) {
+			if ( this.vscore < this.score ) this.vscore++;
+			if ( this.vscore > this.score ) this.vscore = this.score;
+
+			const centerx = this.canvas.width/2;
+			ctx.globalAlpha = 1;
+			ctx.textBaseline = 'top';
+			ctx.fillStyle = '#888';
+	
+			ctx.textAlign = 'right';
+			ctx.font = `bold ${15*this.dpi}px "Helvetica Neue"`;
+			ctx.fillText( 'SCORE', centerx-5, 10*this.dpi );
+	
+			ctx.textAlign = 'left';
+			ctx.font = `lighter ${15*this.dpi}px "Helvetica Neue"`;
+			ctx.fillText( this.vscore.toFixed(0), centerx+5, 10*this.dpi );
 		}
 	}
 }

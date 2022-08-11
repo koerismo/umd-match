@@ -11,6 +11,21 @@ export function randfloat( min: number, max: number ): number {
 	return min+Math.random()*(max-min);
 }
 
+export function remap( value: number, a: number, b: number, c: number, d: number ) {
+	return (value-a)/(b-a)*(d-c)+c;
+}
+
+export function constrain( value: number, a: number, b: number ) {
+	if (b > a) {
+		if (value<a) return a;
+		if (value>b) return b;
+		return value;
+	}
+	if (value>a) return a;
+	if (value<b) return b;
+	return value;
+}
+
 export class Vec2 {
 	static new( x: number, y: number ): i_Vec2 {
 		return { x: x, y: y };

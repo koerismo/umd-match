@@ -13,20 +13,20 @@ const el_volume_sfx: HTMLInputElement		= document.querySelector('#settings-volum
 export let is_open = false;
 
 const settings = {
-	color_mode:		0,
+	// color_mode:		0,
 	volume_music:	1,
 	volume_sfx:		1,
 	motion:			0,
 };
 
 const proposed = {
-	color_mode:		0,
+	// color_mode:		0,
 	volume_music:	1,
 	volume_sfx:		1,
 	motion:			0,
 };
 
-const color_modes = [
+/* const color_modes = [
 	{ name: 'Normal', table: [
 		[168, 100,  77],	// Cyan
 		[0,     0, 500],	// White
@@ -42,7 +42,7 @@ const color_modes = [
 		[0,     0, 500],	// White
 		[3,    40,  90],	// Red
 	] },
-];
+]; */
 
 const motion_modes = [
 	'Full', 'Reduced', 'Minimal',
@@ -70,13 +70,13 @@ const actions = {
 		el_container.classList.add( 'settings' );
 
 		el_settings_motion.innerText = motion_modes[settings.motion];
-		el_settings_colormode.innerText = color_modes[settings.color_mode].name;
+		// el_settings_colormode.innerText = color_modes[settings.color_mode].name;
 		el_volume_music.value = settings.volume_music.toString();
 		el_volume_sfx.value = settings.volume_sfx.toString();
 	},
 	'main-exit':		()=>{},
 
-	'settings-colormode-prev':	()=>{
+	/* 'settings-colormode-prev':	()=>{
 		proposed.color_mode -= 1;
 		if (proposed.color_mode < 0) { proposed.color_mode = color_modes.length-1 }
 		el_settings_colormode.innerText = color_modes[proposed.color_mode].name;
@@ -87,7 +87,7 @@ const actions = {
 		proposed.color_mode %= color_modes.length;
 		el_settings_colormode.innerText = color_modes[proposed.color_mode].name;
 		GameWrapper.SetColorMode( color_modes[proposed.color_mode].table );
-	},
+	}, */
 
 	'settings-volume-music': (value: string)=>{
 		proposed.volume_music = Number(value);
@@ -132,7 +132,7 @@ const actions = {
 };
 
 function apply_settings() {
-	GameWrapper.SetColorMode( color_modes[settings.color_mode].table );
+	// GameWrapper.SetColorMode( color_modes[settings.color_mode].table );
 	GameWrapper.SetMusicVolume( settings.volume_music );
 	GameWrapper.SetSFXVolume( settings.volume_sfx );
 	GameWrapper.SetMotionMode( settings.motion );

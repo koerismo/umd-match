@@ -8,10 +8,17 @@ body, html, canvas {
 	height: 100vh;
 	margin: 0;
 	padding: 0;
+	z-index: -2;
 
 	background-color: #151515;
 	color: #fff;
 	font-family: sans-serif;
+}
+
+canvas {
+	position: absolute;
+	background-color: #f000;
+	z-index: 0;
 }
 
 div#menu-button {
@@ -195,3 +202,81 @@ input[type="range"]::-moz-range-track {
 	height: 4px;
 	background: #fff4;
 }
+
+
+
+
+#background {
+	display: flex;
+	position: absolute;
+	left: 0; right: 0;
+	top: 0; bottom: 0;
+}
+
+#background > div {
+	margin: auto;
+	opacity: 0.05;
+
+	display: grid;
+	width: 600px;
+	height: 600px;
+}
+
+#background > div > img {
+	grid-area: 1/1;
+	width: 600px;
+	height: 600px;
+}
+
+@keyframes spin-r {
+	0%   { transform: rotate(0deg) }
+	100% { transform: rotate(360deg) }
+}
+
+@keyframes spin-l {
+	0%   { transform: rotate(0deg) }
+	100% { transform: rotate(-360deg) }
+}
+
+#background img.bg00 {
+	animation: spin-r 10s linear infinite;
+}
+
+#background img.bg01 {
+	animation: spin-l 35s linear infinite;
+}
+
+#background.no-motion div img {
+	animation: none !important;
+}
+
+/* tutorial (not bad!code!!) */
+
+@keyframes fade-in {
+	0% { opacity: 0 } 100% { opacity: 1 }
+}
+
+#tutorial {
+	user-select: none;
+	position: absolute;
+	left: 10vw;
+	top: 25vh;
+
+	color: #888;
+	font-size: 12pt;
+	font-weight: lighter;
+
+	display: none;
+	flex-direction: column;
+	line-height: 1.5;
+}
+
+#tutorial.active { display: flex; animation: fade-in 0.5s linear 0s 1 }
+#tutorial > span {
+	opacity: 0;
+	transition: opacity 0.2s linear;
+
+	background: #151515;
+	padding: 0 5px;
+}
+#tutorial > span.active	{ opacity: 1 }
