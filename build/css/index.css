@@ -21,17 +21,29 @@ canvas {
 	z-index: 0;
 }
 
-div#menu-button {
+div.ui-button {
 	display: flex;
 	position: absolute;
 	left: 10px; top: 10px;
 	--size: calc(var(--scale) * 32px);
 	width: var(--size); height: var(--size);
 	border: 1px solid #fff5;
+
+	transform: scale(0.8);
+	opacity: 0;
+
 	transition: 0.2s cubic-bezier(.17,.84,.44,1);
 }
 
-div#menu-button > img {
+div.ui-button.visible {
+	transform: scale(1);
+	opacity: 1;
+}
+
+div#menu-button { top: 10px }
+div#undo-button { top: calc((20px + var(--scale)*32px) * 1) }
+
+div.ui-button > img {
 	margin: auto;
 	width: calc(var(--scale) * 24px);
 	height: auto;
@@ -39,13 +51,13 @@ div#menu-button > img {
 	transition: 0.3s cubic-bezier(.17,.84,.44,1);
 }
 
-div#menu-button:hover {
+div.ui-button:hover {
 	margin: -2px;
 	--size: calc(var(--scale) * 32px + 4px);
 	border-color: #fff;
 }
 
-div#menu-button:hover > img {
+div.ui-button:hover > img {
 	width: calc(var(--scale) * 32px);
 	opacity: 1;
 }

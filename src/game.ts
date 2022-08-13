@@ -1,5 +1,5 @@
 import { Vec2, i_Vec2, randint, Bitwise, Bytewise, randfloat, remap, constrain } from './math.js';
-import { draw_sprite, load_image, load_sheet } from './image.js';
+import { draw_sprite, load_sheet } from './image.js';
 import * as sound from './sound.js';
 import './howler.js';
 
@@ -107,6 +107,8 @@ export class GameWrapper {
 	mouse = { x: 0, y: 0, star_id: null };
 	selection: Array<number> = [];
 	action = ACT_IDLE;
+
+	collected_arr: Array<number> = [];
 	collected = 0;
 	difficulty = 0;
 
@@ -120,7 +122,7 @@ export class GameWrapper {
 	level_size: [number, number, number] = [ 0, 5, 0 ];
 	
 	static gravity = 1;
-	static gamescale = 1;
+	static gamescale = 1.75;
 	static motion = MOTION_FULL;
 
 	// this is obsolete now
@@ -187,6 +189,27 @@ export class GameWrapper {
 		this.mouse.star_id = this.nearest_star( this.mouse, -1, 24*GameWrapper.gamescale );
 	}
 
+	undo(): boolean {
+		if ( !this.__fire_event('undo') ) return false;
+		if ( !this.collected_arr.length ) return false;
+		const last_set = this.collected_arr.splice(-3);
+		for ( let star_id of last_set ) {
+			const star = this.stars[star_id];
+			star.visx = this.space.width/2,
+			star.visy = this.space.height/2;
+
+			star.x = randfloat(0.1,0.9)*this.space.width,
+			star.y = randfloat(0.1,0.9)*this.space.height;
+			star.collected = false;
+			star.opacity = 100;
+		}
+		this.collected -= 3;
+
+		this.__analyze_pairs();
+		this.__fire_event('undone');
+		return true;
+	}
+
 	/**
 	 * DEBUG FUNCTION
 	 * @private
@@ -229,7 +252,8 @@ export class GameWrapper {
 			unpairable_id ++;
 		}
 
-		return [pairs_complete, pairs_single];
+		this.__pairstate = [pairs_complete, pairs_single];
+		return this.__pairstate;
 	}
 
 	/**
@@ -245,6 +269,7 @@ export class GameWrapper {
 	replenish_pairs( difficulty: number ) {
 		const req_stars_set: Set<number> = new Set();
 		const req_stars_dic = {};
+		const internal_used = new Set();
 
 		// Step 1: Evaluate incomplete pairs and rank requested stars.
 		for ( let a_id=0; a_id<this.stars.length; a_id++ ) {
@@ -253,16 +278,22 @@ export class GameWrapper {
 
 			for ( let b_id=a_id+1; b_id<this.stars.length; b_id++ ) {
 				let star_b = this.stars[b_id];
-				if (star_b.collected) continue;
+				if (star_b.collected || internal_used.has(b_id)) continue;
 				let target_flags = Bytewise.star_compare(star_a.flags, star_b.flags)
 
 				let found = false;
 				for ( let c_id=b_id+1; c_id<this.stars.length; c_id++ ) {
 					let star_c = this.stars[c_id];
-					if (!star_c.collected && star_c.flags == target_flags ) { found = true; break }
+					if (!star_c.collected && star_c.flags == target_flags && !internal_used.has(c_id) ) { found = true; break }
 				}
 
-				if ( found ) { continue }
+				if ( found ) {
+					internal_used.add(star_a);
+					internal_used.add(star_b);
+					internal_used.add(target_flags);
+					continue;
+				}
+				internal_used.add(star_b);
 				req_stars_set.add(target_flags);
 				req_stars_dic[target_flags] = (req_stars_dic[target_flags]||0) + 1;
 			}
@@ -329,13 +360,16 @@ export class GameWrapper {
 				
 				const is_valid = this.check_pair( this.selection );
 				if ( !is_valid ) {
+					if (!this.__fire_event( 'connect_fail' )) return;
 					this.selection = [];
 					this.action = ACT_IDLE;
 					sound.play_sound( 'connect_fail' );
 					return;
 				}
 
+				if (!this.__fire_event( 'connect_succeed' )) return;
 				this.collected += this.selection.length;
+				Array.prototype.push.apply( this.collected_arr, this.selection );
 
 				for ( let ind=0; ind<this.selection.length; ind++ ) {
 					this.stars[this.selection[ind]].collected = true;
@@ -349,7 +383,7 @@ export class GameWrapper {
 
 				sound.play_sound( 'connect_succeed' );
 				if (this.__enable_score) this.score += this.determine_score( this.selection );
-				this.__pairstate = this.__analyze_pairs();
+				this.__analyze_pairs();
 				this.selection = [];
 				this.action = ACT_IDLE;
 			}
@@ -381,6 +415,7 @@ export class GameWrapper {
 		this.stars = [];
 		this.selection = [];
 		this.collected = 0;
+		this.collected_arr = [];
 	}
 
 	hook( name: string, func: Function ) {
@@ -421,7 +456,7 @@ export class GameWrapper {
 		await sleep(500);
 		this.clear_stage();
 		this.generate_random( ...this.level_size );
-		// this.__pairstate = this.__analyze_pairs();
+		this.__pairstate[1] = new Uint8Array();
 
 		if ( GameWrapper.motion > MOTION_FULL ) {
 			for ( let x=0; x<50; x++ ) {

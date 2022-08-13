@@ -1,5 +1,5 @@
 import { GameWrapper, sleep } from './game.js';
-import { instance } from './index.js';
+import { instance, register_undo } from './index.js';
 
 const el_container = document.querySelector('#tutorial');
 
@@ -84,5 +84,6 @@ function end_tutorial() {
 	instance.__enable_score = true;
 	instance.score = 0;
 	instance.unhook( 'complete' );
+	register_undo();
 	return true;
 }

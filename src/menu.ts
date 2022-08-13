@@ -1,7 +1,7 @@
 'use strict';
 
 import { GameWrapper } from './game.js';
-import { instance as GameInstance } from './index.js';
+import { instance as GameInstance, instance } from './index.js';
 
 const el_container: HTMLElement				= document.querySelector('#menu');
 const el_settings_colormode: HTMLElement	= document.querySelector('#settings-colormode');
@@ -128,6 +128,10 @@ const actions = {
 
 		Object.assign( settings, proposed );
 		apply_settings();
+	},
+
+	'do-undo': ()=>{
+		instance.undo();
 	},
 };
 

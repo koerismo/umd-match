@@ -15,10 +15,27 @@ const canvas = document.querySelector('canvas');
 // const el_fps = document.querySelector('span#fps');
 window.addEventListener( 'resize', ()=>{
 	instance.resize();
-})
+});
+
+export function register_undo() {
+	const el_undo = document.querySelector('#undo-button');
+	instance.hook( 'connect_succeed', ()=>{
+		el_undo.classList.toggle( 'visible', !!instance.__pairstate[1].length );
+		return true;
+	});
+	instance.hook( 'undone', ()=>{
+		el_undo.classList.toggle( 'visible', !!instance.__pairstate[1].length );
+		return true;
+	});
+	instance.hook( 'complete', ()=>{
+		el_undo.classList.remove( 'visible' );
+		return true;
+	});
+}
 
 export const instance = globalThis.game = new GameWrapper(canvas);
 instance.resize();
+
 (async ()=> {
 	await preload();
 	begin_tutorial();
