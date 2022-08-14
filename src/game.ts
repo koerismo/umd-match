@@ -189,26 +189,6 @@ export class GameWrapper {
 		this.mouse.star_id = this.nearest_star( this.mouse, -1, 24*GameWrapper.gamescale );
 	}
 
-	undo(): boolean {
-		if ( !this.collected_arr.length || !this.__fire_event('pre_undo') ) return false;
-		const last_set = this.collected_arr.splice(-3);
-		for ( let star_id of last_set ) {
-			const star = this.stars[star_id];
-			star.visx = this.space.width/2,
-			star.visy = this.space.height/2;
-
-			star.x = randfloat(0.1,0.9)*this.space.width,
-			star.y = randfloat(0.1,0.9)*this.space.height;
-			star.collected = false;
-			star.opacity = 100;
-		}
-		this.collected -= 3;
-
-		this.__analyze_pairs();
-		this.__fire_event('post_undo');
-		return true;
-	}
-
 	/**
 	 * DEBUG FUNCTION
 	 * @private
@@ -362,7 +342,6 @@ export class GameWrapper {
 					this.selection = [];
 					this.action = ACT_IDLE;
 					sound.play_sound( 'connect_fail' );
-					this.__fire_event( 'post_connect_fail' );
 					return;
 				}
 
@@ -375,10 +354,7 @@ export class GameWrapper {
 
 				if ( this.collected == this.stars.length ) {
 					sound.play_sound( 'complete' );
-					if (this.__fire_event( 'pre_complete' )) {
-						this.next_stage();
-						this.__fire_event( 'post_complete' );
-					}
+					if (this.__fire_event( 'pre_complete' )) this.next_stage();
 					// TODO: Make something happen with the points here?
 				}
 
@@ -387,7 +363,6 @@ export class GameWrapper {
 				this.__analyze_pairs();
 				this.selection = [];
 				this.action = ACT_IDLE;
-				this.__fire_event( 'post_connect_succeed' );
 			}
 		}
 		else {

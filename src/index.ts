@@ -17,22 +17,6 @@ window.addEventListener( 'resize', ()=>{
 	instance.resize();
 });
 
-export function register_undo() {
-	const el_undo = document.querySelector('#undo-button');
-	instance.hook( 'post_connect_succeed', ()=>{
-		el_undo.classList.toggle( 'visible', !!instance.__pairstate[1].length );
-		return true;
-	});
-	instance.hook( 'post_undo', ()=>{
-		el_undo.classList.toggle( 'visible', !!instance.__pairstate[1].length );
-		return true;
-	});
-	instance.hook( 'post_complete', ()=>{
-		el_undo.classList.remove( 'visible' );
-		return true;
-	});
-}
-
 export const instance = globalThis.game = new GameWrapper(canvas);
 instance.resize();
 
