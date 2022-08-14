@@ -190,8 +190,7 @@ export class GameWrapper {
 	}
 
 	undo(): boolean {
-		if ( !this.__fire_event('undo') ) return false;
-		if ( !this.collected_arr.length ) return false;
+		if ( !this.collected_arr.length || !this.__fire_event('pre_undo') ) return false;
 		const last_set = this.collected_arr.splice(-3);
 		for ( let star_id of last_set ) {
 			const star = this.stars[star_id];
@@ -206,7 +205,7 @@ export class GameWrapper {
 		this.collected -= 3;
 
 		this.__analyze_pairs();
-		this.__fire_event('undone');
+		this.__fire_event('post_undo');
 		return true;
 	}
 
@@ -360,24 +359,26 @@ export class GameWrapper {
 				
 				const is_valid = this.check_pair( this.selection );
 				if ( !is_valid ) {
-					if (!this.__fire_event( 'connect_fail' )) return;
 					this.selection = [];
 					this.action = ACT_IDLE;
 					sound.play_sound( 'connect_fail' );
+					this.__fire_event( 'post_connect_fail' );
 					return;
 				}
 
-				if (!this.__fire_event( 'connect_succeed' )) return;
 				this.collected += this.selection.length;
 				Array.prototype.push.apply( this.collected_arr, this.selection );
-
+				
 				for ( let ind=0; ind<this.selection.length; ind++ ) {
 					this.stars[this.selection[ind]].collected = true;
-
 				}
+
 				if ( this.collected == this.stars.length ) {
 					sound.play_sound( 'complete' );
-					if (this.__fire_event( 'complete' )) this.next_stage();
+					if (this.__fire_event( 'pre_complete' )) {
+						this.next_stage();
+						this.__fire_event( 'post_complete' );
+					}
 					// TODO: Make something happen with the points here?
 				}
 
@@ -386,6 +387,7 @@ export class GameWrapper {
 				this.__analyze_pairs();
 				this.selection = [];
 				this.action = ACT_IDLE;
+				this.__fire_event( 'post_connect_succeed' );
 			}
 		}
 		else {

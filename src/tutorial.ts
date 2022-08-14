@@ -20,7 +20,7 @@ const tutorial = [
 				instance.__createStar( 0x222 ),
 			];
 			instance.settle_stars(true);
-			instance.hook('complete', next );
+			instance.hook('pre_complete', next );
 		}
 	},
 	{
@@ -37,7 +37,7 @@ const tutorial = [
 				instance.__createStar( 0x012 ),
 			];
 			instance.settle_stars(true);
-			instance.hook( 'complete', next );
+			instance.hook( 'pre_complete', next );
 		}
 	},
 	{
@@ -47,7 +47,7 @@ const tutorial = [
 			await sleep(300);
 			instance.generate_random( 0, 2, 0 );
 			instance.settle_stars( true );
-			instance.hook( 'complete', end_tutorial );
+			instance.hook( 'pre_complete', end_tutorial );
 		}
 	},
 ]
@@ -83,7 +83,7 @@ function end_tutorial() {
 	el_container.classList.remove('active');
 	instance.__enable_score = true;
 	instance.score = 0;
-	instance.unhook( 'complete' );
+	instance.unhook( 'pre_complete' );
 	register_undo();
 	return true;
 }

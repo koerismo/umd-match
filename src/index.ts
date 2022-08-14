@@ -19,15 +19,15 @@ window.addEventListener( 'resize', ()=>{
 
 export function register_undo() {
 	const el_undo = document.querySelector('#undo-button');
-	instance.hook( 'connect_succeed', ()=>{
+	instance.hook( 'post_connect_succeed', ()=>{
 		el_undo.classList.toggle( 'visible', !!instance.__pairstate[1].length );
 		return true;
 	});
-	instance.hook( 'undone', ()=>{
+	instance.hook( 'post_undo', ()=>{
 		el_undo.classList.toggle( 'visible', !!instance.__pairstate[1].length );
 		return true;
 	});
-	instance.hook( 'complete', ()=>{
+	instance.hook( 'post_complete', ()=>{
 		el_undo.classList.remove( 'visible' );
 		return true;
 	});
