@@ -15,6 +15,10 @@ export function remap( value: number, a: number, b: number, c: number, d: number
 	return (value-a)/(b-a)*(d-c)+c;
 }
 
+export function mod( value: number, mod: number ) {
+	return ((value%mod)+mod)%mod;
+}
+
 export function constrain( value: number, a: number, b: number ) {
 	if (b > a) {
 		if (value<a) return a;
@@ -190,6 +194,19 @@ export class Bytewise {
 		return out;
 	}
 
+	static add( a: number, b: number, wrap: number=-1 ) {
+		if ( wrap == -1 ) return a+b;
+
+		const max = a|b;
+		let out = 0;
+		for ( let i=0; max>>i > 0; i+=4 ) {
+			const digita = (a>>i) & 0xf;
+			const digitb = (b>>i) & 0xf;
+			out += (digita+digitb) % wrap;
+		}
+		return out;
+	}
+
 	/** THIS IS A SPECIALIZED FUNCTION! It does the following for each flag:
 	 ** If A == B, OUT = A
 	 ** If A != B, OUT != A != B
@@ -236,6 +253,13 @@ export class Bitwise {
 		let max = 0;
 		for ( let i=0; value>>i > 0; i++ ) max += 1<<i;
 		return value ^ max;
+	}
+
+	/** Converts bit flags to byte flags. ex: 0b1010 --> 0xf0f0 */
+	static as_bytes( value: number, mult: number=0xf ) {
+		let out = 0;
+		for ( let i=0; value>>i > 0; i++ ) out += (((value>>i)&1)*mult)<<(i*4);
+		return out;
 	}
 
 }

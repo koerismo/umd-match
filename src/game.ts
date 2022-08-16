@@ -305,6 +305,31 @@ export class GameWrapper {
 		return new_stars;
 	}
 
+	/**
+	 * Since this is checked every turn, there should be 3(n) unpaired stars at any given time.
+	 * We are guaranteed full coverage by matching one to the first two and matching two to the remaining one.
+	 * This function assumes that the pair analysis has already been run.
+	 */
+	repair_broken_pairs() {
+		const unpaired_count = this.__pairstate[1].length;
+		if ( unpaired_count%3 != 0 ) throw( `Expected 3n missing pairs, but received ${unpaired_count} instead.` );
+
+		const adding = new Array(unpaired_count);
+		for ( let base_id=0; base_id<unpaired_count; base_id+=3 ) {
+			const a_id = this.__pairstate[1][base_id+0];
+			const b_id = this.__pairstate[1][base_id+1];
+			const c_id = this.__pairstate[1][base_id+2];
+
+			const out2_flagtypes	= Bytewise.random( 0x111 );
+			const out2_flaginit		= this.stars[c_id].flags;
+
+			adding[base_id+0]		= this.__createStar(Bytewise.star_compare( this.stars[a_id].flags, this.stars[b_id].flags ));
+			adding[base_id+1]		= this.__createStar(Bytewise.add( out2_flaginit, out2_flagtypes*1, 0x2 ));
+			adding[base_id+2]		= this.__createStar(Bytewise.add( out2_flaginit, out2_flagtypes*2, 0x2 ));
+		}
+		Array.prototype.push.apply( this.stars, adding );
+	}
+
 	check_pair( pair: Array<number> ) {
 		const flags = new Array(3);
 		for ( let flag_ind=0; flag_ind<3; flag_ind++ ) {
@@ -363,6 +388,8 @@ export class GameWrapper {
 				this.__analyze_pairs();
 				this.selection = [];
 				this.action = ACT_IDLE;
+
+				if ( this.__pairstate[1].length ) this.repair_broken_pairs();
 			}
 		}
 		else {
