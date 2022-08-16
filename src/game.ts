@@ -311,22 +311,24 @@ export class GameWrapper {
 	 * This function assumes that the pair analysis has already been run.
 	 */
 	repair_broken_pairs() {
-		const unpaired_count = this.__pairstate[1].length;
-		if ( unpaired_count%3 != 0 ) throw( `Expected 3n missing pairs, but received ${unpaired_count} instead.` );
+		const in_count		= this.__pairstate[1].length;
+		const add_count		= Math.floor(in_count/2) + (in_count%2)*2;
+		const adding		= new Array( add_count );
 
-		const adding = new Array(unpaired_count);
-		for ( let base_id=0; base_id<unpaired_count; base_id+=3 ) {
-			const a_id = this.__pairstate[1][base_id+0];
-			const b_id = this.__pairstate[1][base_id+1];
-			const c_id = this.__pairstate[1][base_id+2];
-
-			const out2_flagtypes	= Bytewise.random( 0x111 );
-			const out2_flaginit		= this.stars[c_id].flags;
-
-			adding[base_id+0]		= this.__createStar(Bytewise.star_compare( this.stars[a_id].flags, this.stars[b_id].flags ));
-			adding[base_id+1]		= this.__createStar(Bytewise.add( out2_flaginit, out2_flagtypes*1, 0x2 ));
-			adding[base_id+2]		= this.__createStar(Bytewise.add( out2_flaginit, out2_flagtypes*2, 0x2 ));
+		for ( let base_id=0; base_id<in_count/2; base_id++ ) {
+			const a_id				= this.__pairstate[1][base_id*2+0];
+			const b_id				= this.__pairstate[1][base_id*2+1];
+			adding[base_id]			= this.__createStar(Bytewise.star_compare( this.stars[a_id].flags, this.stars[b_id].flags ));
 		}
+
+		if ( in_count%2 ) {
+			const base_id			= add_count-2;
+			const out_flagtypes		= Bytewise.random( 0x111 );
+			const out_flaginit		= this.stars[base_id].flags;
+			adding[base_id+1]		= this.__createStar(Bytewise.add( out_flaginit, out_flagtypes*1, 0x2 ));
+			adding[base_id+2]		= this.__createStar(Bytewise.add( out_flaginit, out_flagtypes*2, 0x2 ));
+		}
+
 		Array.prototype.push.apply( this.stars, adding );
 	}
 

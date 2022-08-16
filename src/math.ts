@@ -255,7 +255,7 @@ export class Bitwise {
 		return value ^ max;
 	}
 
-	/** Converts bit flags to byte flags. ex: 0b1010 --> 0xf0f0 */
+	/** Converts bit flags to byte flags. ex: 0b1010 --> 0xf0f0. This could probably be done with logs, but I have not found a reliable way of doing so. */
 	static as_bytes( value: number, mult: number=0xf ) {
 		let out = 0;
 		for ( let i=0; value>>i > 0; i++ ) out += (((value>>i)&1)*mult)<<(i*4);
