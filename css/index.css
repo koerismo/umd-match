@@ -1,0 +1,308 @@
+:root {
+	--scale: 1;
+}
+
+body, html, canvas {
+	overflow: hidden;
+	width: 100vw;
+	height: 100vh;
+	margin: 0;
+	padding: 0;
+	z-index: -2;
+
+	background-color: #151515;
+	color: #fff;
+	font-family: sans-serif;
+}
+
+canvas {
+	position: absolute;
+	background-color: #f000;
+	z-index: 0;
+}
+
+div.ui-button {
+	display: flex;
+	position: absolute;
+	left: 10px; top: 10px;
+	--size: calc(var(--scale) * 32px);
+	width: var(--size); height: var(--size);
+	border: 1px solid #fff5;
+
+	transform: scale(0.8);
+	opacity: 0;
+
+	transition: 0.2s cubic-bezier(.17,.84,.44,1);
+}
+
+div.ui-button.visible {
+	transform: scale(1);
+	opacity: 1;
+}
+
+div#menu-button { top: 10px }
+div#undo-button { top: calc((20px + var(--scale)*32px) * 1) }
+
+div.ui-button > img {
+	margin: auto;
+	width: calc(var(--scale) * 24px);
+	height: auto;
+	opacity: 0.5;
+	transition: 0.3s cubic-bezier(.17,.84,.44,1);
+}
+
+div.ui-button:hover {
+	margin: -2px;
+	--size: calc(var(--scale) * 32px + 4px);
+	border-color: #fff;
+}
+
+div.ui-button:hover > img {
+	width: calc(var(--scale) * 32px);
+	opacity: 1;
+}
+
+div#menu {
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	right: 0;
+	z-index: 10;
+	display: none;
+	transition: none;
+}
+
+div#menu.active {
+	display: flex;
+	/* TODO: Detect older browsers and fall back to solid bg! */
+	/* backdrop-filter: blur(5px) contrast(0.9) brightness(0.8) grayscale(0.3); */
+	backdrop-filter: blur(10px) contrast(0.8) brightness(0.5) grayscale(0.3);
+}
+
+div#menu > div {
+	display: none;
+	margin: auto;
+	margin-top: 20vh;
+	max-width: 250px;
+	width: 100%;
+}
+
+div#menu.main > #menu-main { display: block }
+div#menu.settings > #menu-settings { display: block }
+
+#menu-main > h1 {
+	font-size: 60pt;
+	font-weight: lighter;
+	text-align: center;
+	margin: 0 0 20px 0;
+}
+
+#menu-main > div {
+	display: flex;
+	flex-direction: column;
+}
+
+#menu-main > div > span {
+	padding: 10px;
+	text-align: center;
+	font-size: 15pt;
+	font-weight: normal;
+	cursor: pointer;
+	margin: 0 20px;
+	transition: margin 0.1s cubic-bezier(.17,.84,.44,1);
+}
+
+#menu-main > div > span:hover {
+	background-color: #0007;
+	font-weight: bold;
+	margin: 0 0;
+}
+
+/* ===== SETTINGS MENU ===== */
+
+#menu-settings > section {
+	position: relative;
+	border-top: 1px solid #fff;
+	padding: 8px 0;
+	margin-bottom: 30px;
+}
+
+#menu-settings > section > span.section-header {
+	font-weight: lighter;
+	font-size: 12pt;
+	position: absolute;
+	top: -15pt;
+	font-variant: small-caps;
+}
+
+button {
+	border: 1px solid #fffa;
+	background: #0000;
+	color: #fffa;
+	padding: 5px 10px;
+}
+
+button.btn-infill {
+	font-weight: bold;
+	border-width: 2px;
+	padding: 4px 9px;
+}
+
+button.slim {
+	padding: 0 3px;
+}
+
+button:hover {
+	border-color: #0000;
+	background: #fffc;
+	color: #111;
+}
+
+button:active {
+	background: #fff;
+	color: #000;
+}
+
+#menu-settings div.col {
+	display: flex;
+	flex-direction: column;
+	justify-content: start;
+	gap: 7px;
+}
+
+#menu-settings div.row {
+	display: flex;
+	flex-direction: row;
+	justify-content: start;
+	gap: 7px;
+}
+
+#menu-settings div.col > .stretch { height: 100%; }
+#menu-settings div.row > .stretch { width: 100%; }
+#menu-settings div.col > .center { margin-left: auto; margin-right: auto; }
+#menu-settings div.row > .center { margin-top: auto; margin-bottom: auto; }
+
+span.inset-value {
+	font-size: 11pt;
+	font-variant: all-small-caps;
+	border: solid #fff4;
+	border-width: 1px 0;
+	padding: 6px 0;
+	margin: 0 -2px;
+	text-align: center;
+	min-width: 100px;
+}
+
+input[type="range"] {
+	width: 128px;
+	background: #0000;
+	height: 28px;
+}
+
+input[type="range"]::-webkit-slider-thumb,
+input[type="range"]::-moz-range-thumb {
+	border-radius: 0;
+	width: 6px;
+	height: 16px;
+	border: none;
+	background: #fff;
+}
+
+input[type="range"]::-webkit-slider-runnable-track,
+input[type="range"]::-moz-range-track {
+	height: 4px;
+	background: #fff4;
+}
+
+
+
+
+#background {
+	display: flex;
+	position: absolute;
+	left: 0; right: 0;
+	top: 0; bottom: 0;
+}
+
+#background > div {
+	margin: auto;
+	opacity: 0.05;
+
+	display: grid;
+	width: 600px;
+	height: 600px;
+}
+
+#background > div > img {
+	grid-area: 1/1;
+	width: 600px;
+	height: 600px;
+}
+
+@keyframes spin-r {
+	0%   { transform: rotate(0deg) }
+	100% { transform: rotate(360deg) }
+}
+
+@keyframes spin-l {
+	0%   { transform: rotate(0deg) }
+	100% { transform: rotate(-360deg) }
+}
+
+#background img.bg00 {
+	animation: spin-r 10s linear infinite;
+}
+
+#background img.bg01 {
+	animation: spin-l 35s linear infinite;
+}
+
+#background.no-motion div img {
+	animation: none !important;
+}
+
+/* tutorial (not bad!code!!) */
+
+@keyframes fade-in {
+	0% { opacity: 0 } 100% { opacity: 1 }
+}
+
+#tutorial {
+	user-select: none;
+	position: absolute;
+	left: 10vw;
+	top: 25vh;
+
+	color: #888;
+	font-size: 12pt;
+	font-weight: lighter;
+
+	display: none;
+	flex-direction: column;
+	line-height: 1.5;
+}
+
+@media screen and ( max-width: 700px ) {
+	:root {
+		--scale: 2;
+	}
+
+	#tutorial {
+		bottom: 15px;
+		left: 10px;
+		right: 10px;
+		text-align: left;
+		top: auto;
+	}
+}
+
+#tutorial.active { display: flex; animation: fade-in 0.5s linear 0s 1 }
+#tutorial > span {
+	opacity: 0;
+	transition: opacity 0.2s linear;
+
+	background: #151515;
+	padding: 0 5px;
+}
+#tutorial > span.active	{ opacity: 1 }

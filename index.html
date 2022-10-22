@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Match Game</title>
+	<link rel="stylesheet" href="./css/index.css" />
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+	<div id="background">
+		<div>
+			<img class="bg00" src="/assets/game/bg_layer_00.png">
+			<img class="bg01" src="/assets/game/bg_layer_01.png">
+		</div>
+	</div>
+	<canvas id="main" width="auto" height="auto"></canvas>
+	<div id="menu-button" class="ui-button visible" data-action="enter-menu"><img src="./assets/game/menu_button.png"></div>
+	<div id="undo-button" class="ui-button" data-action="do-undo"><img src="./assets/game/undo_button.png"></div>
+	<div id="menu" class="">
+		<div id="menu-main">
+			<h1>GAME</h1>
+			<div>
+				<span data-action="main-resume">Resume</span>
+				<span data-action="main-settings">Options</span>
+				<!-- <span data-action="main-exit">Exit</span> -->
+			</div>
+		</div>
+		<div id="menu-settings">
+			<section>
+				<span class="section-header">Accessibility</span>
+				<!-- <div class="row">
+					<span class="stretch center">Color Mode</span>
+					<button data-action="settings-colormode-prev" class="slim">&LeftArrow;</button>
+					<span id="settings-colormode" class="inset-value">Normal</span>
+					<button data-action="settings-colormode-next" class="slim">&rightarrow;</button>
+				</div> -->
+				<div class="row">
+					<span class="stretch center">Game Scale</span>
+					<input id="settings-game-scale" data-value="settings-game-scale" type="range" min="0" max="1" step="0.25" />
+				</div>
+				<div class="row">
+					<span class="stretch center">Motion</span>
+					<button data-action="settings-motion-prev" class="slim">&LeftArrow;</button>
+					<span id="settings-motion" class="inset-value">Normal</span>
+					<button data-action="settings-motion-next" class="slim">&rightarrow;</button>
+				</div>
+			</section>
+			<section>
+				<span class="section-header">Sound</span>
+				<div class="row">
+					<span class="stretch center">Music</span>
+					<input id="settings-volume-music" data-value="settings-volume-music" type="range" min="0" max="1" step="0.1" />
+				</div>
+				<div class="row">
+					<span class="stretch center">SFX</span>
+					<input id="settings-volume-sfx" data-value="settings-volume-sfx" type="range" min="0" max="1" step="0.1" />
+				</div>
+			</section>
+			<section>
+				<span class="section-header">Menu</span>
+				<div class="row">
+					<div class="stretch"></div>
+					<button data-action="settings-cancel">Cancel</button>
+					<button data-action="settings-apply" class="btn-infill">Apply</button>
+				</div>
+			</section>
+		</div>
+	</div>
+
+	<div id="tutorial"></div>
+
+	<!-- this fps counter tanks performance. come on -->
+	<!-- <span id="fps" style="position: absolute; top: 10px; right: 10px; color: #fff; font-family: monospace; text-align: right; background: #000; z-index: 20;"></span> -->
+	
+	<script src="./js/game.bundle.js" type="module"></script>
+
+</body>
+</html>
