@@ -315,7 +315,7 @@ export class GameWrapper {
 		const add_count		= Math.floor(in_count/2) + (in_count%2)*2;
 		const adding		= new Array( add_count );
 
-		for ( let base_id=0; base_id<in_count/2; base_id++ ) {
+		for ( let base_id=0; base_id<Math.floor(in_count/2); base_id++ ) {
 			const a_id				= this.__pairstate[1][base_id*2+0];
 			const b_id				= this.__pairstate[1][base_id*2+1];
 			adding[base_id]			= this.__createStar(Bytewise.star_compare( this.stars[a_id].flags, this.stars[b_id].flags ));

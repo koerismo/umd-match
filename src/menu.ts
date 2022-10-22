@@ -1,7 +1,7 @@
 'use strict';
 
 import { GameWrapper } from './game.js';
-import { instance as GameInstance, instance } from './index.js';
+import { instance as GameInstance } from './index.js';
 
 const el_container: HTMLElement				= document.querySelector('#menu');
 const el_settings_colormode: HTMLElement	= document.querySelector('#settings-colormode');
@@ -130,9 +130,9 @@ const actions = {
 		apply_settings();
 	},
 
-	'do-undo': ()=>{
-		instance.undo();
-	},
+	// 'do-undo': ()=>{
+	// 	instance.undo();
+	// },
 };
 
 function apply_settings() {
@@ -149,7 +149,7 @@ document.querySelectorAll( '*[data-action]' ).forEach( el=>{
 	});
 });
 
-document.querySelectorAll( '*[data-value]' ).forEach( el=>{
+document.querySelectorAll( 'input[data-value]' ).forEach( (el: HTMLInputElement)=>{
 	const action = el.getAttribute( 'data-value' );
 	el.addEventListener( 'input', ()=>{
 		actions[action]( el.value );
