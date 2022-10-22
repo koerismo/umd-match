@@ -283,6 +283,20 @@ input[type="range"]::-moz-range-track {
 	line-height: 1.5;
 }
 
+@media screen and ( max-width: 700px ) {
+	:root {
+		--scale: 2;
+	}
+
+	#tutorial {
+		bottom: 15px;
+		left: 10px;
+		right: 10px;
+		text-align: left;
+		top: auto;
+	}
+}
+
 #tutorial.active { display: flex; animation: fade-in 0.5s linear 0s 1 }
 #tutorial > span {
 	opacity: 0;
