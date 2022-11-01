@@ -84,8 +84,8 @@ div#menu > div {
 	display: none;
 	margin: auto;
 	margin-top: 20vh;
-	max-width: 250px;
-	width: 100%;
+	/* max-width: 250px; */
+	/* width: 100%; */
 }
 
 div#menu.main > #menu-main { display: block }
