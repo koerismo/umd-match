@@ -408,12 +408,12 @@ export class GameWrapper {
 		const dists	= new Uint8ClampedArray(this.stars.length);
 		let min_dist = null;
 		for ( let i=0; i<this.stars.length; i++ ) {
-			dists[i] = Math.sqrt( (vec.x-this.stars[i].x)**2 + (vec.y-this.stars[i].y)**2 );
+			dists[i] = (vec.x-this.stars[i].x)**2 + (vec.y-this.stars[i].y)**2 ;
 			// Is not excluded,  is minimum OR the first item,                 is not collected
 			if ( exclude != i && (dists[i] < min_dist || min_dist === null) && !this.stars[i].collected ) { min_dist = dists[i] };
 		}
 
-		if ( min_dist === null || (max_radius && min_dist > max_radius) ) { return null }
+		if ( min_dist === null || (max_radius && min_dist > max_radius**2) ) { return null }
 		return dists.indexOf( min_dist );
 	}
 
