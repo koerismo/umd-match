@@ -405,12 +405,12 @@ export class GameWrapper {
 	nearest_star( vec: i_Vec2, exclude: number=-1, max_radius: number=0 ): number|null {
 		if ( this.stars.length == 0 ) return null;
 
-		const dists	= new Uint8ClampedArray(this.stars.length);
+		const dists	= new Uint16Array(this.stars.length);
 		let min_dist = null;
 		for ( let i=0; i<this.stars.length; i++ ) {
-			dists[i] = (vec.x-this.stars[i].x)**2 + (vec.y-this.stars[i].y)**2 ;
-			// Is not excluded,  is minimum OR the first item,                 is not collected
-			if ( exclude != i && (dists[i] < min_dist || min_dist === null) && !this.stars[i].collected ) { min_dist = dists[i] };
+			dists[i] = Math.min((vec.x-this.stars[i].x)**2 + (vec.y-this.stars[i].y)**2, 0xffff);
+			// Is not excluded,   is minimum OR the first item,                 is not collected
+			if ( exclude !== i && (dists[i] < min_dist || min_dist === null) && !this.stars[i].collected ) { min_dist = dists[i] };
 		}
 
 		if ( min_dist === null || (max_radius && min_dist > max_radius**2) ) { return null }
