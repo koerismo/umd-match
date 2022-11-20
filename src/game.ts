@@ -408,6 +408,9 @@ export class GameWrapper {
 		const dists	= new Uint16Array(this.stars.length);
 		let min_dist = null;
 		for ( let i=0; i<this.stars.length; i++ ) {
+			// HACK! This fixes race condition issues due to stars being removed while the main event loop runs.
+			if (this.stars[i] === undefined) continue;
+
 			dists[i] = Math.min((vec.x-this.stars[i].x)**2 + (vec.y-this.stars[i].y)**2, 0xffff);
 			// Is not excluded,   is minimum OR the first item,                 is not collected
 			if ( exclude !== i && (dists[i] < min_dist || min_dist === null) && !this.stars[i].collected ) { min_dist = dists[i] };
