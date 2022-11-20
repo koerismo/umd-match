@@ -3,7 +3,8 @@
 	"version": "1.0.0",
 	"main": "src/index.js",
 	"scripts": {
-		"build": "npx tsc"
+		"build": "npx tsc",
+		"full-build": "mkdir release; npx tsc; webpack; mkdir release/js/;  cp -p build/js/game.bundle.js release/js/; mkdir release/css/; cp -R -p build/css/ release/css/; mkdir release/assets/; cp -R -p build/assets/ release/assets/"
 	},
 	"license": "MIT",
 	"dependencies": {

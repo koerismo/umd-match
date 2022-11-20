@@ -2,6 +2,7 @@ import { Vec2, i_Vec2, randint, Bitwise, Bytewise, randfloat, remap, constrain }
 import { draw_sprite, load_sheet } from './image.js';
 import * as sound from './sound.js';
 import './howler.js';
+import { EventSynchronizer } from './events.js';
 
 //const assets = {};
 export async function preload() {
@@ -120,6 +121,8 @@ export class GameWrapper {
 	__pairstate: [Array<Uint8Array>,Uint8Array] = [[],new Uint8Array()]; // DEBUG
 
 	level_size: [number, number, number] = [ 0, 5, 0 ];
+
+	interactloop: EventSynchronizer;
 	
 	static gravity = 1;
 	static gamescale = 1.75;
@@ -168,8 +171,12 @@ export class GameWrapper {
 		this.ctx = this.canvas.getContext( '2d' );
 		if (this.ctx === null) throw('Context is null! This should never happen.');
 
-		this.canvas.addEventListener( 'mousemove', e=>{ this.onmousemove(e) });
-		this.canvas.addEventListener( 'mousedown', e=>{ this.onmousedown(e) });
+		this.interactloop = new EventSynchronizer();
+		this.interactloop.add( 'mousemove', (e:MouseEvent)=>this.onmousemove(e) );
+		this.interactloop.add( 'mousedown', (e:MouseEvent)=>this.onmousedown(e) );
+
+		this.canvas.addEventListener( 'mousemove', e=>this.interactloop.emit('mousemove',e) );
+		this.canvas.addEventListener( 'mousedown', e=>this.interactloop.emit('mousedown',e) );
 	}
 
 	resize() {
@@ -408,8 +415,6 @@ export class GameWrapper {
 		const dists	= new Uint16Array(this.stars.length);
 		let min_dist = null;
 		for ( let i=0; i<this.stars.length; i++ ) {
-			// HACK! This fixes race condition issues due to stars being removed while the main event loop runs.
-			if (this.stars[i] === undefined) continue;
 
 			dists[i] = Math.min((vec.x-this.stars[i].x)**2 + (vec.y-this.stars[i].y)**2, 0xffff);
 			// Is not excluded,   is minimum OR the first item,                 is not collected
@@ -562,6 +567,8 @@ export class GameWrapper {
 	}
 
 	physics( deltatime: number, force_motion=false ) {
+
+		this.interactloop.serve();
 
 		const is_full_motion = GameWrapper.motion == MOTION_FULL || force_motion;
 		const center = Vec2.new( this.space.width/2, this.space.height/2 );

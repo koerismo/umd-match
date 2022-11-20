@@ -1,4 +1,5 @@
 build/js/
 node_modules/
+release/
 .DS_Store
 *.logicx
